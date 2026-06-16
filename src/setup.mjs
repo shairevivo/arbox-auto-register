@@ -244,13 +244,15 @@ async function main() {
   console.log('\nSaved credentials to .env');
 
   console.log('\n=== Next Steps ===');
-  console.log('1. Test locally:   ARBOX_FORCE_RUN=true npm run register');
-  console.log('2. Push to GitHub and add these secrets:');
-  console.log(`   ARBOX_EMAIL     = ${email}`);
-  console.log(`   ARBOX_PASSWORD  = (your password)`);
-  console.log(`   ARBOX_CONFIG    = ${JSON.stringify(config)}`);
+  console.log('1. Test locally:  ARBOX_FORCE_RUN=true npm run register');
+  console.log('2. Push config.json to GitHub:');
+  console.log('   git add config.json && git commit -m "Update classes" && git push');
+  console.log('3. Add these GitHub secrets (Settings > Secrets > Actions):');
+  console.log(`   ARBOX_EMAIL            = ${email}`);
+  console.log('   ARBOX_PASSWORD         = (your password)');
+  console.log('   ARBOX_EMAIL_APP_PASSWORD = (optional — for email notifications)');
   const dayMsg = regDay ? `every ${regDay}` : 'every day';
-  console.log(`3. GitHub Actions will run ${dayMsg} at ${regTime} Israel time.\n`);
+  console.log(`4. GitHub Actions will run ${dayMsg} at ${regTime} Israel time.\n`);
 
   rl.close();
 }

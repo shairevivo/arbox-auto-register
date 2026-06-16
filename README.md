@@ -9,8 +9,9 @@ A free service called **GitHub Actions** runs a small program every hour. The pr
 2. Logs into your Arbox account
 3. Checks the gym schedule for the next 7 days
 4. Finds the classes you picked (by day and time — class name is optional)
-5. Signs you up for each one — or puts you on the waitlist if the class is full
+5. Signs you up for each one — or joins the waitlist if the class is full
 6. Skips classes you're already signed up for
+7. Sends you an email summary (optional)
 
 ---
 
@@ -71,11 +72,12 @@ A terminal is a window where you type commands. You'll use it in the next steps.
 
 ### Step 2: Download and Run the Setup Wizard
 
-Open your terminal and type these three commands, one at a time. Press Enter after each one.
+Open your terminal and type these commands, one at a time. Press Enter after each one.
 
 ```
 git clone https://github.com/YOUR_USERNAME/arbox-auto-register.git
 cd arbox-auto-register
+npm install
 npm run setup
 ```
 
@@ -85,7 +87,7 @@ npm run setup
 > ```
 
 The setup wizard will:
-1. Ask for your **Arbox email** and **password** (the password will show on screen as you type)
+1. Ask for your **Arbox email** and **password** (if you've run it before, it will offer to reuse saved credentials)
 2. Log in and check that your details are correct
 3. Show you the full class schedule for the next 7 days
 4. Let you choose how to select classes:
@@ -94,7 +96,7 @@ The setup wizard will:
 5. Ask which **day** and **time** your gym opens registration (for example: `thursday` at `15:00`)
 6. Save your choices to two files on your computer:
    - `config.json` — the classes you picked, registration day, and registration time
-   - `.env` — your login details (this file stays on your computer and is never uploaded anywhere)
+   - `.env` — your login details (this file stays on your computer and is never uploaded)
 
 **Here's what it looks like:**
 ```
@@ -136,7 +138,17 @@ Registration day (e.g., thursday, or press Enter for every day): thursday
 Registration time in HH:MM (or press Enter for 15:00): 15:00
 ```
 
-### Step 3: Test It
+### Step 3: Push Your Config to GitHub
+
+After the wizard saves `config.json`, push it to your repo:
+
+```
+git add config.json
+git commit -m "Add my class schedule"
+git push
+```
+
+### Step 4: Test It
 
 Run this command to make sure everything works:
 
@@ -150,7 +162,7 @@ ARBOX_FORCE_RUN=true npm run register
 $env:ARBOX_FORCE_RUN="true"; npm run register
 ```
 
-> The `ARBOX_FORCE_RUN` part tells the script to run right now, even if today isn't your registration day. You only need this for testing — the automatic weekly runs handle it on their own.
+> The `ARBOX_FORCE_RUN` part tells the script to run right now, even if today isn't your registration day. You only need this for testing — the automatic runs handle it on their own.
 
 You should see something like:
 ```
@@ -164,27 +176,28 @@ Membership ID: 54321
 Fetching schedule 2026-06-14 → 2026-06-21...
 Found 42 classes in schedule
 
-[REGISTERED] CrossFit — 2026-06-15 07:00 (Coach B) (12 spots were left)
-[REGISTERED] CrossFit — 2026-06-15 18:30 (Coach A) (5 spots were left)
-[OK] Already registered: WOD — 2026-06-16 07:00 (Coach A)
+[REGISTERED] CrossFit — 2026-06-15 07:00 (Coach B)
+[OK] Already registered: CrossFit — 2026-06-15 18:30 (Coach A)
+[SKIP] WOD — 2026-06-22 07:00 (Coach A): registration not open yet
+[FULL] HIIT — 2026-06-17 08:00 (Coach C): class is full
 
 === Summary ===
-  registered: 2
+  registered: 1
   already_registered: 1
+  not_yet_open: 1
+  full: 1
 ```
 
-If you see `[REGISTERED]` or `[OK]`, it's working.
+### Step 5: Add Your Secrets to GitHub
 
-### Step 4: Add Your Secrets to GitHub
-
-Now you need to give GitHub your login details so it can run the script automatically every week. Don't worry — your details are **encrypted** (protected with a secret code) and nobody can see them, not even GitHub.
+Now you need to give GitHub your login details so it can run the script automatically. Don't worry — your details are **encrypted** (protected with a secret code) and nobody can see them, not even GitHub.
 
 1. Go to your forked repo on GitHub: `github.com/YOUR_USERNAME/arbox-auto-register`
 2. Click the **Settings** tab at the top of the page
 3. On the left side, click **Secrets and variables**, then click **Actions**
 4. Click the green **New repository secret** button
 
-You need to add **three** secrets. After adding each one, click **Add secret** and then click **New repository secret** again for the next one.
+You need to add **two** secrets. After adding the first, click **Add secret** and then click **New repository secret** again for the second.
 
 **Secret 1:**
 - **Name:** `ARBOX_EMAIL`
@@ -194,16 +207,7 @@ You need to add **three** secrets. After adding each one, click **Add secret** a
 - **Name:** `ARBOX_PASSWORD`
 - **Secret:** Your Arbox password
 
-**Secret 3:**
-- **Name:** `ARBOX_CONFIG`
-- **Secret:** The JSON text that was printed at the end of `npm run setup`. Copy and paste it exactly as shown.
-
-It looks something like this (one long line):
-```json
-{"registrationDay":"thursday","registrationTime":"15:00","classes":[{"day":"sunday","time":"07:00","name":"CrossFit"},{"day":"sunday","time":"18:30"},{"day":"monday","time":"07:00"}]}
-```
-
-### Step 5: Check That It Works on GitHub
+### Step 6: Check That It Works on GitHub
 
 1. Go to the **Actions** tab at the top of your repo
 2. Click **Arbox Auto-Register** on the left side
@@ -212,6 +216,31 @@ It looks something like this (one long line):
 5. If you see your classes listed as registered — you're done!
 
 From now on, the script runs automatically at your configured day and time. You don't need to do anything else.
+
+---
+
+## Email Notifications (Optional)
+
+Want to get an email summary after each registration run? You just need to generate an app password for your email.
+
+**For Yahoo:**
+1. Go to [Yahoo Account Security](https://login.yahoo.com/account/security)
+2. Scroll to "Generate app password"
+3. Select "Other app", name it anything (e.g., "Arbox"), click **Generate**
+4. Copy the generated password
+
+**For Gmail:**
+1. Go to [Google App Passwords](https://myaccount.google.com/apppasswords)
+2. Name it anything (e.g., "Arbox"), click **Create**
+3. Copy the generated password
+
+Then add it as a GitHub secret:
+- **Name:** `ARBOX_EMAIL_APP_PASSWORD`
+- **Secret:** The app password you just generated
+
+That's it! You'll now get an email after each registration with a summary of what happened.
+
+If you don't set this secret, everything still works — you just won't get email notifications.
 
 ---
 
@@ -227,13 +256,22 @@ cd arbox-auto-register
 npm run setup
 ```
 
-Pick your new classes. Then go to GitHub and update the `ARBOX_CONFIG` secret with the new JSON:
-1. Go to Settings > Secrets and variables > Actions
-2. Click on `ARBOX_CONFIG`
-3. Click **Update**
-4. Paste the new JSON and save
+The wizard will show your current config and ask what you'd like to change. After saving, push the updated config to GitHub:
+```
+git add config.json
+git commit -m "Update classes"
+git push
+```
 
-### Option B: Edit the Config File by Hand
+### Option B: Edit config.json Directly on GitHub
+
+1. Go to your repo on GitHub
+2. Click on `config.json`
+3. Click the pencil icon (edit) in the top right
+4. Make your changes
+5. Click **Commit changes**
+
+### Option C: Edit config.json Locally
 
 Open `config.json` in any text editor (Notepad, TextEdit, or VS Code) and change it:
 ```json
@@ -247,7 +285,12 @@ Open `config.json` in any text editor (Notepad, TextEdit, or VS Code) and change
 }
 ```
 
-Then update the `ARBOX_CONFIG` secret on GitHub with the same text (as one line).
+Then push to GitHub:
+```
+git add config.json
+git commit -m "Update classes"
+git push
+```
 
 ### What the Fields Mean
 
@@ -362,15 +405,18 @@ The class name, time, or day doesn't match what's in the schedule. Common reason
 - The time format is wrong — always use two digits for hours, like `07:00` (not `7:00`).
 - The gym hasn't published next week's schedule yet.
 
-**"Class is full" / Waitlist**
-The script automatically puts you on the waitlist when a class is full. You'll see `[WAITLIST]` in the output. Check your waitlist position in the Arbox app.
+**"registration not open yet"**
+The gym has published the schedule but hasn't opened registration for that class yet. This is normal — the script will register once registration opens at your configured time.
+
+**"class is full"**
+The script tries to join the waitlist automatically. If that works, you'll see `[WAITLIST]`. If not, you'll see `[FULL]`. Check the Arbox app for waitlist options.
 
 **GitHub Actions stopped running**
 GitHub automatically disables workflows after **60 days of no activity** in your repo. To fix it, go to the Actions tab and click **Run workflow** to trigger it manually. This re-enables the automatic schedule.
 
 **GitHub Actions runs but nothing happens**
-- Make sure all three secrets (`ARBOX_EMAIL`, `ARBOX_PASSWORD`, `ARBOX_CONFIG`) are set correctly.
-- Check that your `ARBOX_CONFIG` secret contains valid JSON — it should start with `{` and end with `}`.
+- Make sure both secrets (`ARBOX_EMAIL`, `ARBOX_PASSWORD`) are set correctly.
+- Check that `config.json` exists in your repo with valid class entries.
 
 ---
 
@@ -380,13 +426,13 @@ GitHub automatically disables workflows after **60 days of no activity** in your
 Yes. On GitHub, your credentials are stored as [encrypted secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets) — they're protected and never shown in logs. On your computer, they're saved in a `.env` file that is never uploaded to GitHub.
 
 **What if the gym hasn't published next week's schedule yet?**
-The script will say "No class found" for those classes. If this happens often, your gym might open registration at a different time. Ask them when registration opens and adjust accordingly.
+The script will show `[SKIP] registration not open yet` for those classes. This is normal — registration will happen automatically once your gym opens it.
 
 **Can I register for the same class type at different times?**
 Yes! Just add multiple entries with the same class name but different times. For example, CrossFit at 07:00 and CrossFit at 18:30.
 
 **How do I change my class schedule?**
-Run `npm run setup` again to pick new classes, or edit `config.json` by hand. Then update the `ARBOX_CONFIG` secret on GitHub.
+The easiest way: edit `config.json` directly on GitHub (click the file, then the pencil icon). Or run `npm run setup` locally and push the updated config.
 
 **Does it work with multiple gym locations?**
 Currently it uses the first location on your account. If you need a specific location, open an issue on GitHub.
@@ -400,10 +446,12 @@ arbox-auto-register/
 ├── src/
 │   ├── arbox-client.mjs   # Arbox API client (login, schedule, register)
 │   ├── register.mjs       # Main script — finds and registers for classes
-│   └── setup.mjs          # Interactive setup wizard
+│   ├── setup.mjs          # Interactive setup wizard
+│   └── notify.mjs         # Email notification sender (optional)
 ├── .github/workflows/
 │   └── register.yml       # GitHub Actions schedule (hourly, filtered by config)
-├── config.example.json    # Example class config
+├── config.json            # Your class schedule (edit this to change classes)
+├── config.example.json    # Example config for reference
 ├── .env.example           # Example credentials file
 ├── package.json
 └── README.md

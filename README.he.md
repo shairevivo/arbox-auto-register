@@ -12,8 +12,9 @@
 2. מתחברת לחשבון Arbox שלך
 3. בודקת את לוח השיעורים ל-7 ימים הקרובים
 4. מוצאת את השיעורים שבחרת (לפי יום ושעה — שם השיעור הוא אופציונלי)
-5. רושמת אותך לכל אחד מהם — או מצרפת לרשימת המתנה אם השיעור מלא
+5. רושמת אותך לכל אחד מהם — או מצטרפת לרשימת המתנה אם השיעור מלא
 6. מדלגת על שיעורים שכבר נרשמת אליהם
+7. שולחת לך סיכום במייל (אופציונלי)
 
 ---
 
@@ -80,13 +81,14 @@ GitHub הוא המקום שבו ההרשמה האוטומטית רצה כל שב
 
 ### צעד 2: הורדה והרצת אשף ההגדרות
 
-פתחו את הטרמינל והקלידו את שלוש הפקודות האלה, אחת אחרי השנייה. לחצו Enter אחרי כל אחת.
+פתחו את הטרמינל והקלידו את הפקודות האלה, אחת אחרי השנייה. לחצו Enter אחרי כל אחת.
 
 <div dir="ltr">
 
 ```
 git clone https://github.com/YOUR_USERNAME/arbox-auto-register.git
 cd arbox-auto-register
+npm install
 npm run setup
 ```
 
@@ -99,7 +101,7 @@ npm run setup
 
 האשף:
 
-1. ישאל את **כתובת המייל והסיסמה** שלכם ב-Arbox (הסיסמה תופיע על המסך בזמן ההקלדה)
+1. ישאל את **כתובת המייל והסיסמה** שלכם ב-Arbox (אם כבר הרצתם פעם, הוא יציע להשתמש בפרטים השמורים)
 2. יתחבר ויבדוק שהפרטים נכונים
 3. יציג את **לוח השיעורים המלא** ל-7 ימים הקרובים
 4. יאפשר לכם לבחור שיעורים בשתי דרכים:
@@ -155,7 +157,21 @@ Registration time in HH:MM (or press Enter for 15:00): 15:00
 
 </div>
 
-### צעד 3: בדיקה
+### צעד 3: דחיפת ההגדרות ל-GitHub
+
+אחרי שהאשף שומר את `config.json`, דחפו אותו לריפו שלכם:
+
+<div dir="ltr">
+
+```
+git add config.json
+git commit -m "Add my class schedule"
+git push
+```
+
+</div>
+
+### צעד 4: בדיקה
 
 הריצו את הפקודה הזו כדי לוודא שהכל עובד:
 
@@ -179,7 +195,7 @@ $env:ARBOX_FORCE_RUN="true"; npm run register
 
 </div>
 
-> החלק `ARBOX_FORCE_RUN` אומר לסקריפט לרוץ עכשיו, גם אם היום הוא לא יום ההרשמה שלכם. צריך את זה רק לבדיקות — ההרצות האוטומטיות השבועיות מטפלות בזה לבד.
+> החלק `ARBOX_FORCE_RUN` אומר לסקריפט לרוץ עכשיו, גם אם היום הוא לא יום ההרשמה שלכם. צריך את זה רק לבדיקות — ההרצות האוטומטיות מטפלות בזה לבד.
 
 אתם צריכים לראות משהו כזה:
 
@@ -196,29 +212,32 @@ Membership ID: 54321
 Fetching schedule 2026-06-14 → 2026-06-21...
 Found 42 classes in schedule
 
-[REGISTERED] CrossFit — 2026-06-15 07:00 (Coach B) (12 spots were left)
-[REGISTERED] CrossFit — 2026-06-15 18:30 (Coach A) (5 spots were left)
-[OK] Already registered: WOD — 2026-06-16 07:00 (Coach A)
+[REGISTERED] CrossFit — 2026-06-15 07:00 (Coach B)
+[OK] Already registered: CrossFit — 2026-06-15 18:30 (Coach A)
+[SKIP] WOD — 2026-06-22 07:00 (Coach A): registration not open yet
+[FULL] HIIT — 2026-06-17 08:00 (Coach C): class is full
 
 === Summary ===
-  registered: 2
+  registered: 1
   already_registered: 1
+  not_yet_open: 1
+  full: 1
 ```
 
 </div>
 
 אם אתם רואים `[REGISTERED]` או `[OK]`, זה עובד.
 
-### צעד 4: הוספת Secrets ב-GitHub
+### צעד 5: הוספת Secrets ב-GitHub
 
-עכשיו צריך לתת ל-GitHub את פרטי ההתחברות שלכם כדי שהוא יוכל להריץ את הסקריפט אוטומטית כל שבוע. אל דאגה — הפרטים שלכם **מוצפנים** (מוגנים בקוד סודי) ואף אחד לא יכול לראות אותם, אפילו לא GitHub.
+עכשיו צריך לתת ל-GitHub את פרטי ההתחברות שלכם כדי שהוא יוכל להריץ את הסקריפט אוטומטית. אל דאגה — הפרטים שלכם **מוצפנים** (מוגנים בקוד סודי) ואף אחד לא יכול לראות אותם, אפילו לא GitHub.
 
 1. היכנסו לריפו שלכם ב-GitHub:&rlm; `github.com/YOUR_USERNAME/arbox-auto-register`
 2. לחצו על טאב **Settings** בחלק העליון של הדף
 3. בצד שמאל, לחצו על **Secrets and variables**, ואז לחצו על **Actions**
 4. לחצו על הכפתור הירוק **New repository secret**
 
-צריך להוסיף **שלושה** secrets. אחרי כל אחד, לחצו **Add secret** ואז לחצו שוב על **New repository secret** בשביל הבא.
+צריך להוסיף **שניים** secrets. אחרי הראשון, לחצו **Add secret** ואז לחצו שוב על **New repository secret** בשביל השני.
 
 **Secret 1:**
 - **Name:**&rlm; `ARBOX_EMAIL`
@@ -228,21 +247,7 @@ Found 42 classes in schedule
 - **Name:**&rlm; `ARBOX_PASSWORD`
 - **Secret:** הסיסמה שלכם ב-Arbox
 
-**Secret 3:**
-- **Name:**&rlm; `ARBOX_CONFIG`
-- **Secret:** טקסט ה-JSON שהודפס בסוף `npm run setup`. העתיקו והדביקו אותו בדיוק כפי שהוא.
-
-זה נראה בערך ככה (שורה ארוכה אחת):
-
-<div dir="ltr">
-
-```json
-{"registrationDay":"thursday","registrationTime":"15:00","classes":[{"day":"sunday","time":"07:00","name":"CrossFit"},{"day":"sunday","time":"18:30"},{"day":"monday","time":"07:00"}]}
-```
-
-</div>
-
-### צעד 5: בדיקה שזה עובד ב-GitHub
+### צעד 6: בדיקה שזה עובד ב-GitHub
 
 1. היכנסו לטאב **Actions** בחלק העליון של הריפו
 2. בצד שמאל תראו **Arbox Auto-Register** — לחצו עליו
@@ -251,6 +256,31 @@ Found 42 classes in schedule
 5. אם אתם רואים שהשיעורים נרשמו — סיימתם!
 
 מכאן והלאה, הסקריפט רץ אוטומטית ביום ובשעה שהגדרתם. לא צריך לעשות שום דבר נוסף.
+
+---
+
+## התראות במייל (אופציונלי)
+
+רוצים לקבל סיכום במייל אחרי כל הרצה? צריך רק ליצור סיסמת אפליקציה למייל שלכם.
+
+**ל-Yahoo:**
+1. היכנסו ל-[אבטחת חשבון Yahoo](https://login.yahoo.com/account/security)
+2. גללו ל-"Generate app password"
+3. בחרו "Other app", תנו שם כלשהו (למשל "Arbox"), לחצו **Generate**
+4. העתיקו את הסיסמה שנוצרה
+
+**ל-Gmail:**
+1. היכנסו ל-[סיסמאות אפליקציה של Google](https://myaccount.google.com/apppasswords)
+2. תנו שם כלשהו (למשל "Arbox"), לחצו **Create**
+3. העתיקו את הסיסמה שנוצרה
+
+ואז הוסיפו אותה כ-secret ב-GitHub:
+- **Name:**&rlm; `ARBOX_EMAIL_APP_PASSWORD`
+- **Secret:** סיסמת האפליקציה שיצרתם
+
+זהו! מעכשיו תקבלו מייל אחרי כל הרשמה עם סיכום של מה שקרה.
+
+אם לא מגדירים את ה-secret הזה, הכל עדיין עובד — פשוט לא תקבלו התראות במייל.
 
 ---
 
@@ -271,14 +301,27 @@ npm run setup
 
 </div>
 
-בחרו את השיעורים החדשים. אחר כך היכנסו ל-GitHub ועדכנו את ה-secret בשם `ARBOX_CONFIG`:
+האשף יציג את ההגדרות הנוכחיות וישאל מה תרצו לשנות. אחרי השמירה, דחפו את ההגדרות המעודכנות ל-GitHub:
 
-1. היכנסו ל-Settings, ואז Secrets and variables, ואז Actions
-2. לחצו על `ARBOX_CONFIG`
-3. לחצו על **Update**
-4. הדביקו את ה-JSON החדש ושמרו
+<div dir="ltr">
 
-### אפשרות ב׳: לערוך את קובץ ההגדרות ידנית
+```
+git add config.json
+git commit -m "Update classes"
+git push
+```
+
+</div>
+
+### אפשרות ב׳: לערוך את config.json ישירות ב-GitHub
+
+1. היכנסו לריפו שלכם ב-GitHub
+2. לחצו על `config.json`
+3. לחצו על אייקון העיפרון (עריכה) למעלה מימין
+4. שנו את מה שצריך
+5. לחצו על **Commit changes**
+
+### אפשרות ג׳: לערוך את config.json מקומית
 
 פתחו את `config.json` בעורך טקסט כלשהו (Notepad, TextEdit או VS Code) ושנו:
 
@@ -297,7 +340,17 @@ npm run setup
 
 </div>
 
-ואז עדכנו את ה-secret `ARBOX_CONFIG` ב-GitHub עם אותו טקסט (בשורה אחת).
+ואז דחפו ל-GitHub:
+
+<div dir="ltr">
+
+```
+git add config.json
+git commit -m "Update classes"
+git push
+```
+
+</div>
 
 ### מה כל שדה אומר
 
@@ -425,15 +478,18 @@ launchctl load ~/Library/LaunchAgents/com.arbox-register.plist
 - פורמט השעה שגוי — תמיד כתבו שתי ספרות לשעה, כמו `07:00` (לא `7:00`).
 - חדר הכושר עדיין לא פרסם את לוח השיעורים לשבוע הבא.
 
-**"Class is full" / רשימת המתנה**
-הסקריפט מצרף אתכם אוטומטית לרשימת ההמתנה כשהשיעור מלא. תראו `[WAITLIST]` בפלט. בדקו את המיקום שלכם ברשימת ההמתנה באפליקציית Arbox.
+**"registration not open yet"**
+חדר הכושר פרסם את הלוח אבל עדיין לא פתח הרשמה לשיעור הזה. זה נורמלי — הסקריפט יירשם כשההרשמה תיפתח בזמן שהגדרתם.
+
+**"class is full"**
+הסקריפט מנסה להצטרף לרשימת המתנה אוטומטית. אם זה עובד, תראו `[WAITLIST]`. אם לא, תראו `[FULL]`. בדקו באפליקציית Arbox אפשרויות רשימת המתנה.
 
 **GitHub Actions הפסיק לרוץ**
 GitHub מכבה אוטומטית תהליכים אחרי **60 יום ללא פעילות** בריפו. כדי לתקן, היכנסו לטאב Actions ולחצו על **Run workflow** כדי להפעיל ידנית. זה מפעיל מחדש את התזמון האוטומטי.
 
 **GitHub Actions רץ אבל לא קורה כלום**
-- ודאו שכל שלושת ה-secrets מוגדרים נכון: `ARBOX_EMAIL`&rlm;, `ARBOX_PASSWORD`&rlm;, `ARBOX_CONFIG`.
-- בדקו שה-secret `ARBOX_CONFIG` מכיל JSON תקין — הוא צריך להתחיל ב-`{` ולהסתיים ב-`}`.
+- ודאו ששני ה-secrets מוגדרים נכון: `ARBOX_EMAIL`&rlm;, `ARBOX_PASSWORD`.
+- ודאו שקובץ `config.json` קיים בריפו עם שיעורים תקינים.
 
 ---
 
@@ -443,13 +499,13 @@ GitHub מכבה אוטומטית תהליכים אחרי **60 יום ללא פע
 כן. ב-GitHub, הפרטים שלכם נשמרים כ-[secrets מוצפנים](https://docs.github.com/en/actions/security-guides/encrypted-secrets) — הם מוגנים ולא מוצגים בלוגים. על המחשב, הם שמורים בקובץ `.env` שלעולם לא עולה ל-GitHub.
 
 **מה אם חדר הכושר עדיין לא פרסם את לוח השיעורים?**
-הסקריפט יכתוב "No class found" לאותם שיעורים. אם זה קורה הרבה, ייתכן שחדר הכושר שלכם פותח הרשמה בזמן אחר. תשאלו אותם מתי ההרשמה נפתחת.
+הסקריפט יציג `[SKIP] registration not open yet` לאותם שיעורים. זה נורמלי — ההרשמה תקרה אוטומטית ברגע שחדר הכושר יפתח אותה.
 
 **אפשר להירשם לאותו סוג שיעור בכמה שעות?**
 כן! פשוט הוסיפו כמה רשומות עם אותו שם שיעור אבל שעות שונות. למשל, CrossFit ב-07:00 ו-CrossFit ב-18:30.
 
 **איך משנים את לוח השיעורים שלי?**
-הריצו `npm run setup` מחדש כדי לבחור שיעורים חדשים, או ערכו את `config.json` ידנית. ואז עדכנו את ה-secret `ARBOX_CONFIG` ב-GitHub.
+הדרך הקלה ביותר: ערכו את `config.json` ישירות ב-GitHub (לחצו על הקובץ, ואז על אייקון העיפרון). או הריצו `npm run setup` מקומית ודחפו את ההגדרות המעודכנות.
 
 **האם זה עובד עם כמה סניפים?**
 כרגע הסקריפט משתמש בסניף הראשון בחשבון שלכם. אם צריך סניף ספציפי, פתחו issue ב-GitHub.
@@ -465,10 +521,12 @@ arbox-auto-register/
 ├── src/
 │   ├── arbox-client.mjs   # Arbox API client (login, schedule, register)
 │   ├── register.mjs       # Main script — finds and registers for classes
-│   └── setup.mjs          # Interactive setup wizard
+│   ├── setup.mjs          # Interactive setup wizard
+│   └── notify.mjs         # Email notification sender (optional)
 ├── .github/workflows/
 │   └── register.yml       # GitHub Actions schedule (hourly, filtered by config)
-├── config.example.json    # Example class config
+├── config.json            # Your class schedule (edit this to change classes)
+├── config.example.json    # Example config for reference
 ├── .env.example           # Example credentials file
 ├── package.json
 ├── README.md              # English documentation
