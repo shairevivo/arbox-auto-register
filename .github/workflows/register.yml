@@ -28,8 +28,9 @@ jobs:
           ARBOX_FORCE_RUN: ${{ github.event_name == 'workflow_dispatch' && 'true' || '' }}
           ARBOX_SUMMARY_FILE: summary.txt
 
-      - name: Send email summary
+      - name: Send email summary (optional)
         if: hashFiles('summary.txt') != ''
+        continue-on-error: true
         run: node src/notify.mjs summary.txt
         env:
           ARBOX_EMAIL: ${{ secrets.ARBOX_EMAIL }}

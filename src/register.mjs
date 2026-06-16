@@ -129,20 +129,29 @@ async function main() {
       continue;
     }
 
-    const spotsLeft = match.free ?? (match.max_users - match.registered);
-
     try {
       await registerForClass(auth, match.id, membershipUserId);
-      if (spotsLeft > 0) {
-        console.log(`[REGISTERED] ${label} (${spotsLeft} spots were left)`);
-        results.push({ ...wanted, status: 'registered', label });
-      } else {
-        console.log(`[WAITLIST] ${label} (class was full)`);
-        results.push({ ...wanted, status: 'waitlist', label });
-      }
+      console.log(`[REGISTERED] ${label}`);
+      results.push({ ...wanted, status: 'registered', label });
     } catch (err) {
-      console.log(`[ERROR] ${label}: ${err.message}`);
-      results.push({ ...wanted, status: 'error', label, error: err.message });
+      const msg = err.message.toLowerCase();
+
+      if (msg.includes('outofrange') || msg.includes('out of range')) {
+        console.log(`[SKIP] ${label}: registration not open yet`);
+        results.push({ ...wanted, status: 'not_yet_open', label });
+      } else if (msg.includes('full') || msg.includes('waiting list') || msg.includes('waitlist')) {
+        try {
+          await registerForClass(auth, match.id, membershipUserId, true);
+          console.log(`[WAITLIST] ${label}: joined waitlist`);
+          results.push({ ...wanted, status: 'waitlist', label });
+        } catch {
+          console.log(`[FULL] ${label}: class is full`);
+          results.push({ ...wanted, status: 'full', label });
+        }
+      } else {
+        console.log(`[ERROR] ${label}: ${err.message}`);
+        results.push({ ...wanted, status: 'error', label, error: err.message });
+      }
     }
   }
 
@@ -159,7 +168,7 @@ async function main() {
   const summaryPath = process.env.ARBOX_SUMMARY_FILE;
   if (summaryPath) {
     const lines = results.map(r => {
-      const icon = { registered: '✅', already_registered: '👍', waitlist: '⏳', not_found: '⚠️', error: '❌' }[r.status] || '❓';
+      const icon = { registered: '✅', already_registered: '👍', waitlist: '⏳', full: '😔', not_found: '⚠️', not_yet_open: '🔒', error: '❌' }[r.status] || '❓';
       const desc = r.label || `${r.name || ''} ${r.day} ${r.time}`.trim();
       const extra = r.error ? ` — ${r.error}` : '';
       return `${icon} ${desc}${extra}`;

@@ -86,7 +86,7 @@ export async function getSchedule(auth, fromDate, toDate) {
   });
 }
 
-export async function registerForClass(auth, scheduleId, membershipUserId) {
+export async function registerForClass(auth, scheduleId, membershipUserId, standby = false) {
   return request('/scheduleUser/insert', {
     method: 'POST',
     token: auth.token,
@@ -95,6 +95,7 @@ export async function registerForClass(auth, scheduleId, membershipUserId) {
       schedule_id: scheduleId,
       membership_user_id: membershipUserId,
       extras: null,
+      ...(standby ? { standby: true } : {}),
     },
   });
 }
