@@ -15,10 +15,32 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node src/register.mjs
+
+      - id: run
+        run: node src/register.mjs
+        continue-on-error: true
         env:
           ARBOX_EMAIL: ${{ secrets.ARBOX_EMAIL }}
           ARBOX_PASSWORD: ${{ secrets.ARBOX_PASSWORD }}
           ARBOX_CONFIG: ${{ secrets.ARBOX_CONFIG }}
           ARBOX_WHITELABEL: ${{ secrets.ARBOX_WHITELABEL }}
           ARBOX_FORCE_RUN: ${{ github.event_name == 'workflow_dispatch' && 'true' || '' }}
+          ARBOX_SUMMARY_FILE: summary.txt
+
+      - name: Send email summary
+        if: hashFiles('summary.txt') != ''
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.mail.yahoo.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.ARBOX_EMAIL }}
+          password: ${{ secrets.ARBOX_EMAIL_APP_PASSWORD }}
+          subject: Arbox Auto-Register Summary
+          to: ${{ secrets.ARBOX_EMAIL }}
+          from: Arbox Auto-Register <${{ secrets.ARBOX_EMAIL }}>
+          body: file://summary.txt
+
+      - name: Fail if registration had errors
+        if: steps.run.outcome == 'failure'
+        run: exit 1

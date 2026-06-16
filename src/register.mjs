@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { login, getMembership, getSchedule, registerForClass } from './arbox-client.mjs';
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -153,6 +153,25 @@ async function main() {
   }
   for (const [status, count] of Object.entries(counts)) {
     console.log(`  ${status}: ${count}`);
+  }
+
+  // Write summary file for email notification
+  const summaryPath = process.env.ARBOX_SUMMARY_FILE;
+  if (summaryPath) {
+    const lines = results.map(r => {
+      const icon = { registered: '✅', already_registered: '👍', waitlist: '⏳', not_found: '⚠️', error: '❌' }[r.status] || '❓';
+      const desc = r.label || `${r.name || ''} ${r.day} ${r.time}`.trim();
+      const extra = r.error ? ` — ${r.error}` : '';
+      return `${icon} ${desc}${extra}`;
+    });
+    const summary = [
+      `Arbox Auto-Register — ${new Date().toLocaleDateString('en-IL', { timeZone: 'Asia/Jerusalem', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`,
+      '',
+      ...lines,
+      '',
+      Object.entries(counts).map(([s, c]) => `${s}: ${c}`).join(' | '),
+    ].join('\n');
+    writeFileSync(summaryPath, summary);
   }
 
   const errors = results.filter(r => r.status === 'error');
