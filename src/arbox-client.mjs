@@ -5,8 +5,12 @@ const HEADERS = {
   'Accept': 'application/json, text/plain, */*',
 };
 
+function getWhitelabel() {
+  return process.env.ARBOX_WHITELABEL || 'Arbox';
+}
+
 async function request(path, { method = 'GET', body, token, refreshToken } = {}) {
-  const headers = { ...HEADERS };
+  const headers = { ...HEADERS, whitelabel: getWhitelabel() };
   if (token) headers.accesstoken = token;
   if (refreshToken) headers.refreshtoken = refreshToken;
 
@@ -30,15 +34,29 @@ export async function login(email, password) {
     body: { email, password },
   });
 
+  const token = data.token;
+  const refreshToken = data.refreshToken;
+
+  // Login response may not include box info — fetch from profile
+  let boxId, locationBoxId;
+
   const box = data.users_boxes?.[0];
-  if (!box) throw new Error('No gym (box) found on your account');
+  if (box) {
+    boxId = box.box.id;
+    locationBoxId = box.locations_box.id;
+  } else {
+    const profile = await request('/user/profile', { token, refreshToken });
+    boxId = profile.activeBoxes?.[0];
+    locationBoxId = profile.activeLocationsBox?.[0];
+    if (!boxId) throw new Error('No gym (box) found on your account');
+  }
 
   return {
-    token: data.token,
-    refreshToken: data.refreshToken,
+    token,
+    refreshToken,
     userId: data.id,
-    boxId: box.box.id,
-    locationBoxId: box.locations_box.id,
+    boxId,
+    locationBoxId,
     userName: data.full_name,
   };
 }

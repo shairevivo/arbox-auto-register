@@ -61,17 +61,36 @@ function getTodayInIsrael() {
   }).format(new Date()).toLowerCase();
 }
 
+function getCurrentHourInIsrael() {
+  return parseInt(new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jerusalem',
+    hour: 'numeric',
+    hour12: false,
+  }).format(new Date()));
+}
+
 async function main() {
   console.log(`\n=== Arbox Auto-Register ===`);
   console.log(`Time: ${new Date().toLocaleString('en-IL', { timeZone: 'Asia/Jerusalem' })}\n`);
 
   const config = loadConfig();
 
-  if (config.registrationDay && !process.env.ARBOX_FORCE_RUN) {
-    const today = getTodayInIsrael();
-    if (today !== config.registrationDay.toLowerCase()) {
-      console.log(`Today is ${today}. Registration day is ${config.registrationDay}. Skipping.\n`);
-      return;
+  if (!process.env.ARBOX_FORCE_RUN) {
+    if (config.registrationDay) {
+      const today = getTodayInIsrael();
+      if (today !== config.registrationDay.toLowerCase()) {
+        console.log(`Today is ${today}. Registration day is ${config.registrationDay}. Skipping.\n`);
+        return;
+      }
+    }
+
+    if (config.registrationTime) {
+      const currentHour = getCurrentHourInIsrael();
+      const configHour = parseInt(config.registrationTime.split(':')[0]);
+      if (currentHour !== configHour) {
+        console.log(`Current hour in Israel is ${currentHour}:00. Registration time is ${config.registrationTime}. Skipping.\n`);
+        return;
+      }
     }
   }
 

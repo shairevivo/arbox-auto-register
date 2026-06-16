@@ -2,11 +2,9 @@ name: Arbox Auto-Register
 
 on:
   schedule:
-    # Runs daily at 12:00 and 13:00 UTC to cover both DST modes
-    # (one of them is always 3pm Israel time).
-    # The script checks config.registrationDay and skips non-matching days.
-    - cron: '0 12 * * *'
-    - cron: '0 13 * * *'
+    # Runs hourly. The script checks registrationDay and registrationTime
+    # from the config and skips if it's not the right day/hour in Israel.
+    - cron: '0 * * * *'
   workflow_dispatch: {}
 
 jobs:
@@ -22,4 +20,5 @@ jobs:
           ARBOX_EMAIL: ${{ secrets.ARBOX_EMAIL }}
           ARBOX_PASSWORD: ${{ secrets.ARBOX_PASSWORD }}
           ARBOX_CONFIG: ${{ secrets.ARBOX_CONFIG }}
+          ARBOX_WHITELABEL: ${{ secrets.ARBOX_WHITELABEL }}
           ARBOX_FORCE_RUN: ${{ github.event_name == 'workflow_dispatch' && 'true' || '' }}

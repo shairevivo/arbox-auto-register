@@ -4,8 +4,8 @@ Automatically sign up for your weekly fitness classes on [Arbox](https://www.arb
 
 ## How It Works
 
-A free service called **GitHub Actions** runs a small program every day at 3:00 PM Israel time. The program:
-1. Checks if today is your gym's registration day (configurable — see setup)
+A free service called **GitHub Actions** runs a small program every hour. The program:
+1. Checks if now is the right day and time to register (both are configurable — see setup)
 2. Logs into your Arbox account
 3. Checks the gym schedule for the next 7 days
 4. Finds the classes you picked (by day and time — class name is optional)
@@ -88,10 +88,12 @@ The setup wizard will:
 1. Ask for your **Arbox email** and **password** (the password will show on screen as you type)
 2. Log in and check that your details are correct
 3. Show you the full class schedule for the next 7 days
-4. Let you **pick classes by number** — type the numbers separated by commas (for example: `1,3,5`)
-5. Ask which **day your gym opens registration** (for example: `thursday`). If you press Enter without typing anything, the script will try to register every day.
+4. Let you choose how to select classes:
+   - **Option 1:** Pick from the schedule by number (for example: `1,3,5`)
+   - **Option 2:** Enter day + time manually (useful if the schedule isn't published yet)
+5. Ask which **day** and **time** your gym opens registration (for example: `thursday` at `15:00`)
 6. Save your choices to two files on your computer:
-   - `config.json` — the classes you picked and your registration day
+   - `config.json` — the classes you picked, registration day, and registration time
    - `.env` — your login details (this file stays on your computer and is never uploaded anywhere)
 
 **Here's what it looks like:**
@@ -119,11 +121,19 @@ Available classes:
     6. 07:00 WOD — Coach A (8 spots)
     ...
 
+How do you want to select classes?
+  1. Pick from the schedule above (by number)
+  2. Enter day + time manually
+Choose 1 or 2: 1
+
 Select classes: 2,4,6
 
-Which day does your gym open registration for next week?
-Common choices: thursday, sunday, etc.
-Registration day (or press Enter to run every day): thursday
+--- Registration schedule ---
+
+When does your gym open registration for next week?
+
+Registration day (e.g., thursday, or press Enter for every day): thursday
+Registration time in HH:MM (or press Enter for 15:00): 15:00
 ```
 
 ### Step 3: Test It
@@ -190,7 +200,7 @@ You need to add **three** secrets. After adding each one, click **Add secret** a
 
 It looks something like this (one long line):
 ```json
-{"registrationDay":"thursday","classes":[{"day":"sunday","time":"07:00","name":"CrossFit"},{"day":"sunday","time":"18:30"},{"day":"monday","time":"07:00","name":"WOD"}]}
+{"registrationDay":"thursday","registrationTime":"15:00","classes":[{"day":"sunday","time":"07:00","name":"CrossFit"},{"day":"sunday","time":"18:30"},{"day":"monday","time":"07:00"}]}
 ```
 
 ### Step 5: Check That It Works on GitHub
@@ -201,7 +211,7 @@ It looks something like this (one long line):
 4. Wait about 30 seconds, then click on the run that appeared
 5. If you see your classes listed as registered — you're done!
 
-From now on, the script runs automatically every day at 3:00 PM Israel time, but only does the actual registration on your configured registration day. You don't need to do anything else.
+From now on, the script runs automatically at your configured day and time. You don't need to do anything else.
 
 ---
 
@@ -229,6 +239,7 @@ Open `config.json` in any text editor (Notepad, TextEdit, or VS Code) and change
 ```json
 {
   "registrationDay": "thursday",
+  "registrationTime": "15:00",
   "classes": [
     { "day": "sunday", "time": "07:00", "name": "CrossFit" },
     { "day": "tuesday", "time": "18:30" }
@@ -243,6 +254,7 @@ Then update the `ARBOX_CONFIG` secret on GitHub with the same text (as one line)
 | Field | Required? | What to Write | Example |
 |-------|-----------|---------------|---------|
 | `registrationDay` | Optional | The day your gym opens registration. If not set, the script runs every day. | `thursday` |
+| `registrationTime` | Optional | What time registration opens, in HH:MM. Defaults to `15:00`. | `06:00`, `15:00` |
 | `day` | Yes | Day of the week in English, all lowercase | `sunday`, `monday`, `tuesday` |
 | `time` | Yes | Class start time, exactly as shown in Arbox | `07:00`, `18:30` |
 | `name` | Optional | Class type name — a partial match is enough. If not set, day + time is used to find the class. | `CrossFit` also matches "crossfit" and "CrossFit WOD" |
@@ -327,9 +339,9 @@ Run `crontab -e` and add this line (change the path to match yours):
 
 ## Timezone and Daylight Saving
 
-Israel switches between winter time (IST, UTC+2) and summer time (IDT, UTC+3). The GitHub Actions workflow handles this by running at **two times** every day: 12:00 UTC and 13:00 UTC. One of them will always be 3:00 PM in Israel.
+Israel switches between winter time (IST, UTC+2) and summer time (IDT, UTC+3). The GitHub Actions workflow runs every hour in UTC. The script converts the current time to Israel timezone and compares it against your configured `registrationDay` and `registrationTime`. This means DST is handled automatically — no matter the season, the script runs at the right local time.
 
-The script checks your `registrationDay` setting and skips days that don't match. It also skips classes you're already signed up for. So running twice on the same day doesn't cause any problems.
+The script also skips classes you're already signed up for, so extra runs never cause problems.
 
 ---
 
@@ -390,7 +402,7 @@ arbox-auto-register/
 │   ├── register.mjs       # Main script — finds and registers for classes
 │   └── setup.mjs          # Interactive setup wizard
 ├── .github/workflows/
-│   └── register.yml       # GitHub Actions schedule (daily 3pm Israel)
+│   └── register.yml       # GitHub Actions schedule (hourly, filtered by config)
 ├── config.example.json    # Example class config
 ├── .env.example           # Example credentials file
 ├── package.json

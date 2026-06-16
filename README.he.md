@@ -6,9 +6,9 @@
 
 ## איך זה עובד
 
-שירות חינמי בשם **GitHub Actions** מריץ תוכנית קטנה כל יום בשעה 15:00 שעון ישראל. התוכנית:
+שירות חינמי בשם **GitHub Actions** מריץ תוכנית קטנה כל שעה. התוכנית:
 
-1. בודקת אם היום הוא יום ההרשמה של חדר הכושר שלכם (ניתן להגדרה — ראו בהמשך)
+1. בודקת אם עכשיו היום והשעה הנכונים להרשמה (שניהם ניתנים להגדרה — ראו בהמשך)
 2. מתחברת לחשבון Arbox שלך
 3. בודקת את לוח השיעורים ל-7 ימים הקרובים
 4. מוצאת את השיעורים שבחרת (לפי יום ושעה — שם השיעור הוא אופציונלי)
@@ -102,10 +102,12 @@ npm run setup
 1. ישאל את **כתובת המייל והסיסמה** שלכם ב-Arbox (הסיסמה תופיע על המסך בזמן ההקלדה)
 2. יתחבר ויבדוק שהפרטים נכונים
 3. יציג את **לוח השיעורים המלא** ל-7 ימים הקרובים
-4. יאפשר לכם **לבחור שיעורים לפי מספר** — הקלידו את המספרים מופרדים בפסיקים (למשל: `1,3,5`)
-5. ישאל **באיזה יום חדר הכושר פותח הרשמה** (למשל: `thursday`). אם תלחצו Enter בלי להקליד כלום, הסקריפט ינסה להירשם כל יום.
+4. יאפשר לכם לבחור שיעורים בשתי דרכים:
+   - **אפשרות 1:** לבחור מהלוח לפי מספר (למשל: `1,3,5`)
+   - **אפשרות 2:** להקליד יום + שעה ידנית (שימושי אם הלוח עדיין לא פורסם)
+5. ישאל **באיזה יום ובאיזו שעה** חדר הכושר פותח הרשמה (למשל: `thursday` בשעה `15:00`)
 6. ישמור את הבחירות שלכם בשני קבצים על המחשב:
-   - `config.json` — השיעורים שבחרתם ויום ההרשמה
+   - `config.json` — השיעורים שבחרתם, יום ההרשמה ושעת ההרשמה
    - `.env` — פרטי ההתחברות שלכם (הקובץ הזה נשאר על המחשב ולעולם לא עולה לשום מקום)
 
 **ככה זה נראה:**
@@ -136,11 +138,19 @@ Available classes:
     6. 07:00 WOD — Coach A (8 spots)
     ...
 
+How do you want to select classes?
+  1. Pick from the schedule above (by number)
+  2. Enter day + time manually
+Choose 1 or 2: 1
+
 Select classes: 2,4,6
 
-Which day does your gym open registration for next week?
-Common choices: thursday, sunday, etc.
-Registration day (or press Enter to run every day): thursday
+--- Registration schedule ---
+
+When does your gym open registration for next week?
+
+Registration day (e.g., thursday, or press Enter for every day): thursday
+Registration time in HH:MM (or press Enter for 15:00): 15:00
 ```
 
 </div>
@@ -227,7 +237,7 @@ Found 42 classes in schedule
 <div dir="ltr">
 
 ```json
-{"registrationDay":"thursday","classes":[{"day":"sunday","time":"07:00","name":"CrossFit"},{"day":"sunday","time":"18:30"},{"day":"monday","time":"07:00","name":"WOD"}]}
+{"registrationDay":"thursday","registrationTime":"15:00","classes":[{"day":"sunday","time":"07:00","name":"CrossFit"},{"day":"sunday","time":"18:30"},{"day":"monday","time":"07:00"}]}
 ```
 
 </div>
@@ -240,7 +250,7 @@ Found 42 classes in schedule
 4. חכו בערך 30 שניות, ואז לחצו על ההרצה שהופיעה כדי לראות מה קרה
 5. אם אתם רואים שהשיעורים נרשמו — סיימתם!
 
-מכאן והלאה, הסקריפט רץ אוטומטית כל יום בשעה 15:00 שעון ישראל, אבל עושה הרשמה בפועל רק ביום ההרשמה שהגדרתם. לא צריך לעשות שום דבר נוסף.
+מכאן והלאה, הסקריפט רץ אוטומטית ביום ובשעה שהגדרתם. לא צריך לעשות שום דבר נוסף.
 
 ---
 
@@ -277,6 +287,7 @@ npm run setup
 ```json
 {
   "registrationDay": "thursday",
+  "registrationTime": "15:00",
   "classes": [
     { "day": "sunday", "time": "07:00", "name": "CrossFit" },
     { "day": "tuesday", "time": "18:30" }
@@ -293,6 +304,7 @@ npm run setup
 | שדה | חובה? | מה לכתוב | דוגמה |
 |-----|-------|-----------|-------|
 | `registrationDay` | אופציונלי | היום שבו חדר הכושר פותח הרשמה. אם לא מוגדר, הסקריפט רץ כל יום. | `thursday` |
+| `registrationTime` | אופציונלי | באיזו שעה ההרשמה נפתחת, בפורמט HH:MM. ברירת מחדל: `15:00`. | `06:00`&rlm;, `15:00` |
 | `day` | כן | יום בשבוע באנגלית, באותיות קטנות | `sunday`&rlm;, `monday`&rlm;, `tuesday` |
 | `time` | כן | שעת התחלת השיעור, בדיוק כפי שמופיעה ב-Arbox | `07:00`&rlm;, `18:30` |
 | `name` | אופציונלי | שם סוג השיעור — מספיקה התאמה חלקית. אם לא מוגדר, יום + שעה מספיקים לזיהוי השיעור. | `CrossFit` מתאים גם ל-"crossfit" ול-"CrossFit WOD" |
@@ -390,9 +402,9 @@ launchctl load ~/Library/LaunchAgents/com.arbox-register.plist
 
 ## אזור זמן ושעון קיץ
 
-ישראל עוברת בין שעון חורף (IST, UTC+2) לשעון קיץ (IDT, UTC+3). ה-GitHub Actions מטפל בזה על ידי הרצה **בשתי השעות** כל יום: 12:00 UTC ו-13:00 UTC. אחת מהן תמיד תהיה 15:00 בישראל.
+ישראל עוברת בין שעון חורף (IST, UTC+2) לשעון קיץ (IDT, UTC+3). ה-GitHub Actions רץ כל שעה ב-UTC. הסקריפט ממיר את הזמן הנוכחי לשעון ישראל ומשווה אותו להגדרות `registrationDay` ו-`registrationTime`. זה אומר ששעון קיץ מטופל אוטומטית — בכל עונה, הסקריפט רץ בזמן המקומי הנכון.
 
-הסקריפט בודק את הגדרת `registrationDay` ומדלג על ימים שלא תואמים. הוא גם מדלג על שיעורים שכבר נרשמתם אליהם. אז הרצה כפולה באותו יום לא גורמת לשום בעיה.
+הסקריפט גם מדלג על שיעורים שכבר נרשמתם אליהם, אז הרצות נוספות לעולם לא גורמות לבעיות.
 
 ---
 
@@ -455,7 +467,7 @@ arbox-auto-register/
 │   ├── register.mjs       # Main script — finds and registers for classes
 │   └── setup.mjs          # Interactive setup wizard
 ├── .github/workflows/
-│   └── register.yml       # GitHub Actions schedule (daily 3pm Israel)
+│   └── register.yml       # GitHub Actions schedule (hourly, filtered by config)
 ├── config.example.json    # Example class config
 ├── .env.example           # Example credentials file
 ├── package.json
