@@ -1,0 +1,26 @@
+{
+  "registrationDay": "thursday",
+  "registrationTime": "15:00",
+  "classes": [
+    {
+      "day": "sunday",
+      "time": "08:00"
+    },
+    {
+      "day": "monday",
+      "time": "07:00"
+    },
+    {
+      "day": "tuesday",
+      "time": "07:00"
+    },
+    {
+      "day": "wednesday",
+      "time": "08:00"
+    },
+    {
+      "day": "thursday",
+      "time": "08:00"
+    }
+  ]
+}
