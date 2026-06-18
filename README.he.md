@@ -6,15 +6,14 @@
 
 ## איך זה עובד
 
-שירות חינמי בשם **GitHub Actions** מריץ תוכנית קטנה כל שעה. התוכנית:
+שירות תזמון חינמי בשם **[cron-job.org](https://cron-job.org)** מפעיל תהליך **GitHub Actions** בדיוק ביום ובשעה שבהם חדר הכושר פותח הרשמה. התהליך:
 
-1. בודקת אם עכשיו היום והשעה הנכונים להרשמה (שניהם ניתנים להגדרה — ראו בהמשך)
-2. מתחברת לחשבון Arbox שלך
-3. בודקת את לוח השיעורים ל-7 ימים הקרובים
-4. מוצאת את השיעורים שבחרת (לפי יום ושעה — שם השיעור הוא אופציונלי)
-5. רושמת אותך לכל אחד מהם — או מצטרפת לרשימת המתנה אם השיעור מלא
-6. מדלגת על שיעורים שכבר נרשמת אליהם
-7. שולחת לך סיכום במייל (אופציונלי)
+1. מתחבר לחשבון Arbox שלך
+2. בודק את לוח השיעורים ל-7 ימים הקרובים
+3. מוצא את השיעורים שבחרת (לפי יום ושעה — שם השיעור הוא אופציונלי)
+4. רושם אותך לכל אחד מהם — או מצטרף לרשימת המתנה אם השיעור מלא
+5. מדלג על שיעורים שכבר נרשמת אליהם
+6. שולח לך סיכום במייל (אופציונלי)
 
 ---
 
@@ -247,15 +246,66 @@ Found 42 classes in schedule
 - **Name:**&rlm; `ARBOX_PASSWORD`
 - **Secret:** הסיסמה שלכם ב-Arbox
 
-### צעד 6: בדיקה שזה עובד ב-GitHub
+### צעד 6: יצירת GitHub Personal Access Token
 
-1. היכנסו לטאב **Actions** בחלק העליון של הריפו
-2. בצד שמאל תראו **Arbox Auto-Register** — לחצו עליו
-3. לחצו על הכפתור **Run workflow** (בצד ימין), ואז לחצו על הכפתור הירוק **Run workflow**
-4. חכו בערך 30 שניות, ואז לחצו על ההרצה שהופיעה כדי לראות מה קרה
-5. אם אתם רואים שהשיעורים נרשמו — סיימתם!
+צריך טוקן (מפתח גישה) כדי ששירות התזמון יוכל להפעיל את התהליך.
 
-מכאן והלאה, הסקריפט רץ אוטומטית ביום ובשעה שהגדרתם. לא צריך לעשות שום דבר נוסף.
+1. היכנסו ל-[github.com/settings/tokens/new](https://github.com/settings/tokens/new) (טוקן קלאסי)
+2. מלאו:
+   - **Note:**&rlm; `arbox-cron-trigger`
+   - **Expiration:** שנה (תצטרכו לחדש אותו כשיפוג)
+   - **Scopes:** סמנו רק **`repo`**
+3. לחצו **Generate token**
+4. העתיקו את הטוקן (מתחיל ב-`ghp_...`) — לא תוכלו לראות אותו שוב
+
+**בדיקה** — פתחו טרמינל והריצו (החליפו `YOUR_TOKEN` בטוקן ו-`YOUR_USERNAME` בשם המשתמש שלכם):
+
+<div dir="ltr">
+
+```
+curl -s -o /dev/null -w "%{http_code}" -X POST \
+  -H "Accept: application/vnd.github+v3+json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  https://api.github.com/repos/YOUR_USERNAME/arbox-auto-register/actions/workflows/register.yml/dispatches \
+  -d '{"ref":"main"}'
+```
+
+</div>
+
+אתם צריכים לראות `204`. בדקו בטאב **Actions** בריפו שהופיעה הרצה חדשה.
+
+### צעד 7: הגדרת הטריגר האוטומטי (cron-job.org)
+
+[cron-job.org](https://cron-job.org) הוא שירות חינמי ששולח בקשת HTTP בזמן מדויק. אנחנו משתמשים בו כדי להפעיל את תהליך ה-GitHub Actions ברגע שההרשמה נפתחת.
+
+1. היכנסו ל-[cron-job.org](https://cron-job.org) ו**הירשמו** (חינם)
+2. אשרו את המייל
+3. לחצו **Create cronjob**
+4. מלאו את ההגדרות הבסיסיות:
+   - **Title:**&rlm; `Arbox Register`
+   - **URL:**&rlm; `https://api.github.com/repos/YOUR_USERNAME/arbox-auto-register/actions/workflows/register.yml/dispatches`
+5. תחת **Schedule**, בחרו **Custom**:
+   - **Timezone:**&rlm; `Asia/Jerusalem`
+   - **Days of week:** רק יום ההרשמה שלכם (למשל **Thursday**)
+   - **Hours:** רק שעת ההרשמה (למשל **15**)
+   - **Minutes:** רק **0**
+6. פתחו את **Advanced**:
+   - **Request method:**&rlm; `POST`
+   - **Request body:**&rlm; `{"ref":"main"}`
+   - **Headers** — הוסיפו שלושה:
+
+     | Key | Value |
+     |-----|-------|
+     | `Accept` | `application/vnd.github+v3+json` |
+     | `Authorization` | `Bearer YOUR_TOKEN` (הטוקן מצעד 6) |
+     | `Content-Type` | `application/json` |
+
+7. לחצו **Create** / **Save**
+8. לחצו **Test run** — אתם צריכים לראות תגובה מוצלחת (סטטוס 204)
+9. בדקו בטאב **Actions** בריפו שהבדיקה הפעילה הרצה
+
+זהו! כל שבוע ביום ובשעה שהגדרתם, cron-job.org יפעיל את התהליך וההרשמה תקרה תוך שניות.
 
 ---
 
@@ -455,9 +505,7 @@ launchctl load ~/Library/LaunchAgents/com.arbox-register.plist
 
 ## אזור זמן ושעון קיץ
 
-ישראל עוברת בין שעון חורף (IST, UTC+2) לשעון קיץ (IDT, UTC+3). ה-GitHub Actions רץ כל שעה ב-UTC. הסקריפט ממיר את הזמן הנוכחי לשעון ישראל ומשווה אותו להגדרות `registrationDay` ו-`registrationTime`. זה אומר ששעון קיץ מטופל אוטומטית — בכל עונה, הסקריפט רץ בזמן המקומי הנכון.
-
-הסקריפט גם מדלג על שיעורים שכבר נרשמתם אליהם, אז הרצות נוספות לעולם לא גורמות לבעיות.
+ישראל עוברת בין שעון חורף (IST, UTC+2) לשעון קיץ (IDT, UTC+3).&rlm; cron-job.org תומך באזור הזמן `Asia/Jerusalem` באופן מובנה, כך ששעון קיץ מטופל אוטומטית — הטריגר תמיד יופעל בזמן המקומי שהגדרתם, ללא קשר לעונה.
 
 ---
 
@@ -484,8 +532,10 @@ launchctl load ~/Library/LaunchAgents/com.arbox-register.plist
 **"class is full"**
 הסקריפט מנסה להצטרף לרשימת המתנה אוטומטית. אם זה עובד, תראו `[WAITLIST]`. אם לא, תראו `[FULL]`. בדקו באפליקציית Arbox אפשרויות רשימת המתנה.
 
-**GitHub Actions הפסיק לרוץ**
-GitHub מכבה אוטומטית תהליכים אחרי **60 יום ללא פעילות** בריפו. כדי לתקן, היכנסו לטאב Actions ולחצו על **Run workflow** כדי להפעיל ידנית. זה מפעיל מחדש את התזמון האוטומטי.
+**הטריגר של cron-job.org נכשל**
+בדקו את היסטוריית ההרצות בדשבורד של cron-job.org. בעיות נפוצות:
+- הטוקן של GitHub פג תוקף — חדשו אותו (צעד 6) ועדכנו את ה-header&rlm; `Authorization` ב-cron-job.org.
+- סטטוס התגובה הוא לא 204 — ודאו שה-URL מכיל את שם המשתמש הנכון ושלושת ה-headers הנדרשים מוגדרים (`Accept`&rlm;, `Authorization`&rlm;, `Content-Type`).
 
 **GitHub Actions רץ אבל לא קורה כלום**
 - ודאו ששני ה-secrets מוגדרים נכון: `ARBOX_EMAIL`&rlm;, `ARBOX_PASSWORD`.
@@ -524,7 +574,7 @@ arbox-auto-register/
 │   ├── setup.mjs          # Interactive setup wizard
 │   └── notify.mjs         # Email notification sender (optional)
 ├── .github/workflows/
-│   └── register.yml       # GitHub Actions schedule (hourly, filtered by config)
+│   └── register.yml       # GitHub Actions workflow (triggered by cron-job.org)
 ├── config.json            # Your class schedule (edit this to change classes)
 ├── config.example.json    # Example config for reference
 ├── .env.example           # Example credentials file

@@ -4,14 +4,13 @@ Automatically sign up for your weekly fitness classes on [Arbox](https://www.arb
 
 ## How It Works
 
-A free service called **GitHub Actions** runs a small program every hour. The program:
-1. Checks if now is the right day and time to register (both are configurable — see setup)
-2. Logs into your Arbox account
-3. Checks the gym schedule for the next 7 days
-4. Finds the classes you picked (by day and time — class name is optional)
-5. Signs you up for each one — or joins the waitlist if the class is full
-6. Skips classes you're already signed up for
-7. Sends you an email summary (optional)
+A free scheduling service called **[cron-job.org](https://cron-job.org)** triggers a **GitHub Actions** workflow at the exact day and time your gym opens registration. The workflow:
+1. Logs into your Arbox account
+2. Checks the gym schedule for the next 7 days
+3. Finds the classes you picked (by day and time — class name is optional)
+4. Signs you up for each one — or joins the waitlist if the class is full
+5. Skips classes you're already signed up for
+6. Sends you an email summary (optional)
 
 ---
 
@@ -207,15 +206,61 @@ You need to add **two** secrets. After adding the first, click **Add secret** an
 - **Name:** `ARBOX_PASSWORD`
 - **Secret:** Your Arbox password
 
-### Step 6: Check That It Works on GitHub
+### Step 6: Create a GitHub Personal Access Token
 
-1. Go to the **Actions** tab at the top of your repo
-2. Click **Arbox Auto-Register** on the left side
-3. Click the **Run workflow** dropdown (right side), then click the green **Run workflow** button
-4. Wait about 30 seconds, then click on the run that appeared
-5. If you see your classes listed as registered — you're done!
+You need a token so the scheduling service can trigger your workflow.
 
-From now on, the script runs automatically at your configured day and time. You don't need to do anything else.
+1. Go to [github.com/settings/tokens/new](https://github.com/settings/tokens/new) (classic token)
+2. Fill in:
+   - **Note:** `arbox-cron-trigger`
+   - **Expiration:** 1 year (you'll need to regenerate it when it expires)
+   - **Scopes:** check only **`repo`**
+3. Click **Generate token**
+4. Copy the token (starts with `ghp_...`) — you won't see it again
+
+**Test it** by opening your terminal and running (replace `YOUR_TOKEN` with the actual token and `YOUR_USERNAME` with your GitHub username):
+```
+curl -s -o /dev/null -w "%{http_code}" -X POST \
+  -H "Accept: application/vnd.github+v3+json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  https://api.github.com/repos/YOUR_USERNAME/arbox-auto-register/actions/workflows/register.yml/dispatches \
+  -d '{"ref":"main"}'
+```
+
+You should see `204`. Check the **Actions** tab in your repo to confirm a new run appeared.
+
+### Step 7: Set Up the Automatic Trigger (cron-job.org)
+
+[cron-job.org](https://cron-job.org) is a free service that sends an HTTP request at a precise time. We use it to trigger the GitHub Actions workflow at the exact moment registration opens.
+
+1. Go to [cron-job.org](https://cron-job.org) and **sign up** (free)
+2. Confirm your email
+3. Click **Create cronjob**
+4. Fill in the basic settings:
+   - **Title:** `Arbox Register`
+   - **URL:** `https://api.github.com/repos/YOUR_USERNAME/arbox-auto-register/actions/workflows/register.yml/dispatches`
+5. Under **Schedule**, select **Custom**:
+   - **Timezone:** `Asia/Jerusalem`
+   - **Days of week:** only your registration day (e.g., **Thursday**)
+   - **Hours:** only your registration hour (e.g., **15**)
+   - **Minutes:** only **0**
+6. Expand **Advanced** settings:
+   - **Request method:** `POST`
+   - **Request body:** `{"ref":"main"}`
+   - **Headers** — add these three:
+
+     | Key | Value |
+     |-----|-------|
+     | `Accept` | `application/vnd.github+v3+json` |
+     | `Authorization` | `Bearer YOUR_TOKEN` (the token from Step 6) |
+     | `Content-Type` | `application/json` |
+
+7. Click **Create** / **Save**
+8. Click **Test run** — you should see a successful response (status 204)
+9. Check the **Actions** tab in your repo to confirm the test triggered a run
+
+That's it! Every week at your configured day and time, cron-job.org will trigger the workflow and registration will happen within seconds.
 
 ---
 
@@ -382,9 +427,7 @@ Run `crontab -e` and add this line (change the path to match yours):
 
 ## Timezone and Daylight Saving
 
-Israel switches between winter time (IST, UTC+2) and summer time (IDT, UTC+3). The GitHub Actions workflow runs every hour in UTC. The script converts the current time to Israel timezone and compares it against your configured `registrationDay` and `registrationTime`. This means DST is handled automatically — no matter the season, the script runs at the right local time.
-
-The script also skips classes you're already signed up for, so extra runs never cause problems.
+Israel switches between winter time (IST, UTC+2) and summer time (IDT, UTC+3). cron-job.org supports the `Asia/Jerusalem` timezone natively, so daylight saving is handled automatically — the trigger always fires at your configured local time regardless of the season.
 
 ---
 
@@ -411,8 +454,10 @@ The gym has published the schedule but hasn't opened registration for that class
 **"class is full"**
 The script tries to join the waitlist automatically. If that works, you'll see `[WAITLIST]`. If not, you'll see `[FULL]`. Check the Arbox app for waitlist options.
 
-**GitHub Actions stopped running**
-GitHub automatically disables workflows after **60 days of no activity** in your repo. To fix it, go to the Actions tab and click **Run workflow** to trigger it manually. This re-enables the automatic schedule.
+**cron-job.org trigger failed**
+Check your cron-job.org dashboard for the execution history. Common issues:
+- The GitHub token expired — regenerate it (Step 6) and update the `Authorization` header in cron-job.org.
+- The response status is not 204 — verify the URL includes your correct GitHub username and the three required headers (`Accept`, `Authorization`, `Content-Type`) are set.
 
 **GitHub Actions runs but nothing happens**
 - Make sure both secrets (`ARBOX_EMAIL`, `ARBOX_PASSWORD`) are set correctly.
@@ -449,7 +494,7 @@ arbox-auto-register/
 │   ├── setup.mjs          # Interactive setup wizard
 │   └── notify.mjs         # Email notification sender (optional)
 ├── .github/workflows/
-│   └── register.yml       # GitHub Actions schedule (hourly, filtered by config)
+│   └── register.yml       # GitHub Actions workflow (triggered by cron-job.org)
 ├── config.json            # Your class schedule (edit this to change classes)
 ├── config.example.json    # Example config for reference
 ├── .env.example           # Example credentials file
