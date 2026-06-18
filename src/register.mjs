@@ -30,7 +30,7 @@ function loadCredentials() {
 function getDateRange(daysAhead = 7) {
   const dates = [];
   const now = new Date();
-  for (let i = 0; i <= daysAhead; i++) {
+  for (let i = 1; i <= daysAhead; i++) {
     const d = new Date(now);
     d.setDate(d.getDate() + i);
     dates.push(d.toISOString().split('T')[0]);
