@@ -94,7 +94,7 @@ async function main() {
     }
   }
 
-  if (config.registrationDelay) {
+  if (config.registrationDelay && !process.env.ARBOX_FORCE_RUN) {
     const seconds = parseInt(config.registrationDelay);
     if (seconds > 0) {
       console.log(`Waiting ${seconds} seconds before starting...\n`);

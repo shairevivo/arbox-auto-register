@@ -1,10 +1,6 @@
 name: Arbox Auto-Register
 
 on:
-  schedule:
-    # Runs hourly. The script checks registrationDay and registrationTime
-    # from the config and skips if it's not the right day/hour in Israel.
-    - cron: '0 * * * *'
   workflow_dispatch: {}
 
 jobs:
