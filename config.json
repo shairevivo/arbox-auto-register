@@ -1,7 +1,7 @@
 {
   "registrationDay": "thursday",
   "registrationTime": "15:00",
-  "registrationDelay": 5,
+  "registrationDelay": 0,
   "classes": [
     {
       "day": "sunday",
